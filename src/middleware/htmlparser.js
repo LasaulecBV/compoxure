@@ -12,6 +12,8 @@ function getCxAttr(node, name) {
 
 function getMiddleware(config, reliableGet, eventHandler) {
 
+   
+
     return function(req, res, next) {
 
         var templateVars = req.templateVars;
@@ -152,19 +154,21 @@ function getMiddleware(config, reliableGet, eventHandler) {
 
         res.parse = function(data) {
 
+            var defaultPlugins = [
+                    parxerPlugins.Test,
+                    parxerPlugins.If,
+                    parxerPlugins.Url(getCx),
+                    parxerPlugins.Image(),
+                    parxerPlugins.Bundle(getCx)
+                ];
+
             parxer({
                 environment: config.environment,
                 cdn: config.cdn,
                 minified: config.minified,
                 showErrors: !req.backend.quietFailure,
                 timeout: utils.timeToMillis(req.backend.timeout || '5000'),
-                plugins: [
-                    parxerPlugins.Test,
-                    parxerPlugins.If,
-                    parxerPlugins.Url(getCx),
-                    parxerPlugins.Image(),
-                    parxerPlugins.Bundle(getCx)
-                ],
+                plugins: defaultPlugins.concat(config.plugins || []),
                 variables: templateVars
             }, data, function(err, content) {
                 // Overall errors
@@ -192,6 +196,7 @@ function getMiddleware(config, reliableGet, eventHandler) {
 
 
 module.exports = {
-    getMiddleware: getMiddleware
+    getMiddleware: getMiddleware,
+    render: require('parxer').render
 };
 

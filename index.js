@@ -37,3 +37,5 @@ module.exports = function(config, eventHandler) {
   }
 
 };
+
+module.exports.render = require('./src/middleware/htmlparser').render;
