@@ -10,3 +10,7 @@ node_modules
 manifest.json
 dump.rdb
 coverage
+
+### VisualStudioCode ###
+.settings
+.vscode
