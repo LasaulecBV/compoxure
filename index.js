@@ -1,5 +1,6 @@
 var cookieParser = require('cookie-parser');
 var ware = require('ware');
+var ReliableGet = require('reliable-get');
 
 module.exports = function(config, eventHandler) {
 
@@ -7,7 +8,11 @@ module.exports = function(config, eventHandler) {
   eventHandler.logger = eventHandler.logger || function() {};
   eventHandler.stats = eventHandler.stats || function() {};
 
-  var backendProxyMiddleware = require('./src/middleware/proxy')(config, eventHandler);
+  var reliableGet = new ReliableGet(config)
+  reliableGet.on('log', eventHandler.logger);
+  reliableGet.on('stat', eventHandler.stats);
+
+  var backendProxyMiddleware = require('./src/middleware/proxy')(config, reliableGet, eventHandler);
   var cacheMiddleware = require('reliable-get/CacheMiddleware')(config);
   var selectBackend = require('./src/middleware/backend')(config);
   var rejectUnsupportedMediaType = require('./src/middleware/mediatypes');
@@ -15,6 +20,8 @@ module.exports = function(config, eventHandler) {
   var interrogateRequest = require('./src/middleware/interrorgator')(config, eventHandler);
   var cleanInvalidUri = require('./src/middleware/invalidurl')(eventHandler);
   var dropFavIcon = require('./src/middleware/favicon');
+  var aggregateMiddleware = require('./src/middleware/aggregator')(config, reliableGet, eventHandler);
+  var parserMiddleware = require('./src/middleware/htmlparser')(config, eventHandler);
 
   var middleware = ware()
                     .use(cleanInvalidUri)
@@ -25,7 +32,9 @@ module.exports = function(config, eventHandler) {
                     .use(rejectUnsupportedMediaType)
                     .use(passThrough)
                     .use(cookieParser)
-                    .use(backendProxyMiddleware);
+                    .use(backendProxyMiddleware)
+                    .use(aggregateMiddleware)
+                    .use(parserMiddleware);
 
   return function(req, res) {
     middleware.run(req, res, function(err) {
@@ -37,5 +46,3 @@ module.exports = function(config, eventHandler) {
   }
 
 };
-
-module.exports.render = require('./src/middleware/htmlparser').render;
