@@ -16,13 +16,13 @@ module.exports = function (config, reliableGet, eventHandler) {
     delete res.locals.responseData;
 
     var templateVars = req.templateVars;
+    var timeout = utils.timeToMillis(req.backend.timeout || '5000');
 
     var getCx = function (fragment, next) {
       /*jslint evil: true */
       var options,
         start = Date.now(),
         url = getCxAttr(fragment, 'cx-url'),
-        timeout = utils.timeToMillis(getCxAttr(fragment, 'cx-timeout') || '5s'),
         cacheKeyAttr = getCxAttr(fragment, 'cx-cache-key'),
         cacheKey = cacheKeyAttr ? cacheKeyAttr : utils.urlToCacheKey(url),
         cacheTTL = utils.timeToMillis(getCxAttr(fragment, 'cx-cache-ttl') || '1m'),
@@ -158,7 +158,7 @@ module.exports = function (config, reliableGet, eventHandler) {
       cdn: config.cdn,
       minified: config.minified,
       showErrors: !req.backend.quietFailure,
-      timeout: utils.timeToMillis(req.backend.timeout || '5000'),
+      timeout: timeout,
       variables: req.templateVars,
       plugins: [
         parxerPlugins.Url(getCx),
